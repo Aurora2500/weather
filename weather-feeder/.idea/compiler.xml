@@ -7,8 +7,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="weather-feeder" />
-        <module name="weather-datamart" />
         <module name="weather-service" />
+        <module name="datalake" />
+        <module name="weather-datamart" />
       </profile>
     </annotationProcessing>
   </component>

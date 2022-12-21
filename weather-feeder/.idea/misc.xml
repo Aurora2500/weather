@@ -7,6 +7,7 @@
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/../weather-datamart/pom.xml" />
         <option value="$PROJECT_DIR$/../weather-service/pom.xml" />
+        <option value="$PROJECT_DIR$/../datalake/pom.xml" />
       </list>
     </option>
   </component>
