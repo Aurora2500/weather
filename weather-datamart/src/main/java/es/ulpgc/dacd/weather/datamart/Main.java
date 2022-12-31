@@ -1,4 +1,4 @@
-package org.example;
+package es.ulpgc.dacd.weather.datamart;
 
 public class Main {
     public static void main(String[] args) {

@@ -1,4 +1,4 @@
-package org.example;
+package es.ulpgc.es.weather.datalake;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,6 +1,8 @@
+package es.ulpgc.dacd.weather.feeder;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import org.example.WeatherData;
+import es.ulpgc.es.weather.datalake.WeatherData;
 
 import java.io.IOException;
 import java.net.URI;

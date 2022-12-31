@@ -1,3 +1,5 @@
+package es.ulpgc.dacd.weather.feeder;
+
 import java.io.File;
 
 public class Main {

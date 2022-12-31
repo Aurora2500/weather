@@ -1,3 +1,5 @@
+package es.ulpgc.dacd.weather.feeder;
+
 public class Area {
 	private final double top;
 	private final double bottom;

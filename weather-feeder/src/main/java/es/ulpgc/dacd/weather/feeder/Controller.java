@@ -1,5 +1,7 @@
-import org.example.Datalake;
-import org.example.FileDatalake;
+package es.ulpgc.dacd.weather.feeder;
+
+import es.ulpgc.es.weather.datalake.Datalake;
+import es.ulpgc.es.weather.datalake.FileDatalake;
 
 import java.io.File;
 
