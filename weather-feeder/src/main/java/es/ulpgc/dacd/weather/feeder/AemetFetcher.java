@@ -30,8 +30,10 @@ public class AemetFetcher implements WeatherFetcher{
 		String name = o.get("ubi").getAsString();
 		double maxTemp = o.get("tamax").getAsDouble();
 		double minTemp = o.get("tamin").getAsDouble();
+		double lat = o.get("lat").getAsDouble();
+		double lon = o.get("lon").getAsDouble();
 
-		return new WeatherData(timestamp, id, name, maxTemp, minTemp);
+		return new WeatherData(timestamp, id, name, maxTemp, minTemp, lat, lon);
 	}
 
 	private Stream<JsonObject> fetchData() throws IOException, InterruptedException {

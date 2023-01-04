@@ -14,7 +14,8 @@ public class Controller {
 		WeatherFetcher fetcher = new AemetFetcher(apiKey);
 		try {
 			List<WeatherData> data = fetcher.fetch().toList();
-			System.out.println("Fetched " + data.size() + " records");
+			// System.out.println("Fetched " + data.size() + " records");
+			datalake.save(data);
 
 
 		} catch (IOException | InterruptedException e) {
