@@ -10,6 +10,6 @@ public class Main {
 		File datalakePath = new File(datalakePathString);
 
 		Controller controller = new Controller(apiKey, datalakePath);
-
+		controller.startLoop();
 	}
 }

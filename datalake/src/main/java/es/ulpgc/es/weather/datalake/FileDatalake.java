@@ -2,10 +2,10 @@ package es.ulpgc.es.weather.datalake;
 
 import java.io.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileDatalake implements Datalake {
 	private final File datalakePath;
@@ -17,20 +17,43 @@ public class FileDatalake implements Datalake {
 	}
 
 	@Override
-	public List<WeatherData> read() {
+	public Stream<WeatherData> read() {
 		return null;
 	}
 
 	@Override
-	public List<WeatherData> read(LocalDate date) {
+	public Stream<WeatherData> readDate(LocalDate date) {
+		File dayPath = new File(datalakePath, associatedFileName(date));
+		if (!dayPath.exists()) {
+			return Stream.empty();
+		}
+		try {
+			return new BufferedReader(new FileReader(dayPath))
+				.lines()
+				.map(FileDatalake::parseLine);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-		return null;
+	private static WeatherData parseLine(String s) {
+		return WeatherGson.timeAwareGson().fromJson(s, WeatherData.class);
+	}
+
+	public Stream<WeatherData> readRange(LocalDate from, LocalDate to) {
+		if(from.isAfter(to)) {
+			return Stream.empty();
+		}
+		return Stream.concat(
+			readDate(from),
+			readRange(from.plusDays(1), to)
+		);
 	}
 
 	@Override
 	public void save(List<WeatherData> data) {
 		data.stream()
-			.collect(Collectors.groupingBy(events -> associatedFileName(events.timestamp())))
+			.collect(Collectors.groupingBy(events -> associatedFileName(events.timestamp().toLocalDate())))
 			.forEach((fileName, events) -> {
 				File dayPath = new File(datalakePath, fileName);
 				try {
@@ -51,7 +74,7 @@ public class FileDatalake implements Datalake {
 			});
 	}
 
-	private String associatedFileName(LocalDateTime timestamp) {
-		return timestamp.format(DateTimeFormatter.BASIC_ISO_DATE) + ".events";
+	private String associatedFileName(LocalDate date) {
+		return date.format(DateTimeFormatter.BASIC_ISO_DATE) + ".events";
 	}
 }

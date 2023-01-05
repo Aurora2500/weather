@@ -2,10 +2,12 @@ package es.ulpgc.es.weather.datalake;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Stream;
 
 public interface Datalake {
-	List<WeatherData> read();
+	Stream<WeatherData> read();
 
-	List<WeatherData> read(LocalDate date);
+	Stream<WeatherData> readDate(LocalDate date);
+	Stream<WeatherData> readRange(LocalDate from, LocalDate to);
 	void save(List<WeatherData> data);
 }
