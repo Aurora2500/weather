@@ -12,7 +12,7 @@ import java.util.*;
 
 public class Controller {
 	private static final int HOURS = 24;
-	private static final int MILIS_IN_HOUR = 3_600_000;
+	private static final int MILLIS_IN_HOUR = 3_600_000;
 	private final WeatherFetcher fetcher;
 	private final Datalake datalake;
 	private final Optional<Area> fetchArea;
@@ -58,6 +58,6 @@ public class Controller {
 					throw new RuntimeException(e);
 				}
 			}
-		}, 0, MILIS_IN_HOUR);
+		}, 0, MILLIS_IN_HOUR);
 	}
 }
