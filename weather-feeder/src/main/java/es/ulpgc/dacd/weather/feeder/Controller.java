@@ -11,18 +11,28 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class Controller {
+	private static final int HOURS = 24;
+	private static final int MILIS_IN_HOUR = 3_600_000;
 	private final WeatherFetcher fetcher;
 	private final Datalake datalake;
+	private final Optional<Area> fetchArea;
 	Set<PlaceTimeKey> writtenData;
-	private static final int MILIS_IN_HOUR = 3_600_000;
+
+	private Controller(String apiKey, File datalakePath, Optional<Area> fetchArea) {
+		this.fetcher = new AemetFetcher(apiKey);
+		this.datalake = new FileDatalake(datalakePath);
+		this.fetchArea = fetchArea;
+		writtenData = new HashSet<>();
+		fillWrittenData();
+	}
 
 
 	public Controller(String apiKey, File datalakePath) {
-		datalake = new FileDatalake(datalakePath);
-		fetcher = new AemetFetcher(apiKey);
-		writtenData = new HashSet<>();
-		fillWrittenData();
-		System.out.println(writtenData.size());
+		this(apiKey, datalakePath, Optional.empty());
+	}
+
+	public Controller(String apiKey, File datalakePath, Area area) {
+		this(apiKey, datalakePath, Optional.of(area));
 	}
 
 	private void fillWrittenData() {
@@ -35,10 +45,11 @@ public class Controller {
 		new Timer().scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				writtenData.removeIf(key -> key.time().isBefore(LocalDateTime.now().minusHours(24)));
+				writtenData.removeIf(key -> key.time().isBefore(LocalDateTime.now().minusHours(HOURS)));
 
 				try {
-					List<WeatherData> data = fetcher.fetch()
+
+					List<WeatherData> data = (fetchArea.isPresent()? fetcher.fetch(fetchArea.get()) : fetcher.fetch())
 						.filter(dataPoint -> !writtenData.contains(new PlaceTimeKey(dataPoint)))
 						.toList();
 					datalake.save(data);
