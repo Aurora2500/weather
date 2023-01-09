@@ -51,6 +51,7 @@ public class Controller {
 
 					List<WeatherData> data = (fetchArea.isPresent()? fetcher.fetch(fetchArea.get()) : fetcher.fetch())
 						.filter(dataPoint -> !writtenData.contains(new PlaceTimeKey(dataPoint)))
+						.peek(datapoint -> writtenData.add(new PlaceTimeKey(datapoint)))
 						.toList();
 					datalake.save(data);
 					System.out.println("Saved " + data.size() + " new data points");
