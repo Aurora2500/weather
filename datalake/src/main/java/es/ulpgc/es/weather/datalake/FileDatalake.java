@@ -3,15 +3,19 @@ package es.ulpgc.es.weather.datalake;
 import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileDatalake implements Datalake {
 	private final File datalakePath;
+	FileHasher fileHasher;
 
 	public FileDatalake(File datalakePath) {
 		this.datalakePath = datalakePath;
+		this.fileHasher = new FileHasher();
 		// assure that the datalake directory exists
 		datalakePath.mkdirs();
 	}
@@ -48,6 +52,33 @@ public class FileDatalake implements Datalake {
 			readDate(from),
 			readRange(from.plusDays(1), to)
 		);
+	}
+
+	@Override
+	public String hash(LocalDate date) {
+		File file = new File(datalakePath, associatedFileName(date));
+		return getHash(file);
+	}
+
+	@Override
+	public Map<LocalDate, String> hash() {
+		return Arrays.stream(datalakePath.listFiles())
+			.collect(Collectors.toMap(
+				file -> parseFileName(file.getName()),
+				this::getHash
+			));
+	}
+
+	private String getHash(File file) {
+		try {
+			return fileHasher.hash(file);
+		} catch (FileNotFoundException e) {
+			return "";
+		}
+	}
+
+	private static LocalDate parseFileName(String s) {
+		return LocalDate.parse(s.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE);
 	}
 
 	@Override
