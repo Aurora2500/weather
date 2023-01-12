@@ -29,6 +29,7 @@ public class Controller {
 		Map<LocalDate, String> lakeHash = datalake.hash();
 		List<LocalDate> datesToUpdate = daysToUpdate(lakeHash);
 		for (LocalDate date : datesToUpdate) {
+			System.out.println("Updating " + date);
 			String hash = lakeHash.get(date);
 			Stream<WeatherData> weatherData = datalake.readDate(date);
 			WeatherMinMax newMinMax = new WeatherMinMax(date, weatherData, hash);
