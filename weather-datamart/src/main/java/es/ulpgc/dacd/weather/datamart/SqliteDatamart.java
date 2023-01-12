@@ -61,9 +61,9 @@ public class SqliteDatamart implements Datamart {
 				"FROM maxTemp max " +
 				"INNER JOIN minTemp min " +
 				"ON max.date = min.date;");
-		HashMap<LocalDate, String> hashes = new HashMap<LocalDate, String>();
+		HashMap<LocalDate, String> hashes = new HashMap<>();
 		while(result.next()) {
-			hashes.put(result.getDate("date").toLocalDate(), result.getString("hash"));
+			hashes.put(LocalDate.parse(result.getString("date")), result.getString("hash"));
 		}
 		return hashes;
 	}
@@ -80,7 +80,7 @@ public class SqliteDatamart implements Datamart {
 
 	@Override
 	public void updateMinMax(WeatherMinMax newMinMax) throws SQLException {
-		PreparedStatement minStatement = connection.prepareStatement("INSERT INTO minTemp(date, temperature, station, time, hash) VALUES (date(?/1000, 'unixepoch'), ?, ?, ?, ?);");
+		PreparedStatement minStatement = connection.prepareStatement("INSERT OR REPLACE INTO minTemp(date, temperature, station, time, hash) VALUES (date(?/1000, 'unixepoch'), ?, ?, ?, ?);");
 		minStatement.setDate(1, Date.valueOf(newMinMax.date()));
 		minStatement.setDouble(2, newMinMax.minimum().temperature());
 		minStatement.setString(3, newMinMax.minimum().station().id());
@@ -88,7 +88,7 @@ public class SqliteDatamart implements Datamart {
 		minStatement.setString(5, newMinMax.hash());
 		minStatement.execute();
 
-		PreparedStatement maxStatement = connection.prepareStatement("INSERT INTO maxTemp(date, temperature, station, time, hash) VALUES (date(?/1000, 'unixepoch'), ?, ?, ?, ?);");
+		PreparedStatement maxStatement = connection.prepareStatement("INSERT OR REPLACE INTO maxTemp(date, temperature, station, time, hash) VALUES (date(?/1000, 'unixepoch'), ?, ?, ?, ?);");
 		maxStatement.setDate(1, Date.valueOf(newMinMax.date()));
 		maxStatement.setDouble(2, newMinMax.maximum().temperature());
 		maxStatement.setString(3, newMinMax.maximum().station().id());
