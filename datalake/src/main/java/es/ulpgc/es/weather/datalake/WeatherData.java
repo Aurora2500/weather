@@ -25,6 +25,10 @@ public class WeatherData {
 		return timestamp;
 	}
 
+	public WeatherStation station() {
+		return new WeatherStation(stationId, stationName, lat, lon);
+	}
+
 	public String stationId() {
 		return stationId;
 	}
