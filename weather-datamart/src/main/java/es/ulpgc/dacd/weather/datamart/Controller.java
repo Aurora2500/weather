@@ -11,9 +11,10 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class Controller {
-	Datalake datalake;
-	Datamart datamart;
-	Set<String> knownStations;
+	private final Datalake datalake;
+	private final Datamart datamart;
+	private final Set<String> knownStations;
+	private static final long MILLIS_IN_HOUR = 3600_000;
 
 	public Controller(String datamartPath, File datalakePath) {
 		try {
@@ -27,7 +28,7 @@ public class Controller {
 
 	private void updateDatamart() {
 		Map<LocalDate, String> lakeHash = datalake.hash();
-		List<LocalDate> datesToUpdate = daysToUpdate(lakeHash);
+		Set<LocalDate> datesToUpdate = daysToUpdate(lakeHash);
 		for (LocalDate date : datesToUpdate) {
 			System.out.println("Updating " + date);
 			String hash = lakeHash.get(date);
@@ -47,13 +48,19 @@ public class Controller {
 				throw new RuntimeException(e);
 			}
 		}
+		System.out.println("Done updating");
 	}
 
 	public void run() {
-		updateDatamart();
+		new Timer().scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				updateDatamart();
+			}
+		}, 0, MILLIS_IN_HOUR);
 	}
 
-	private List<LocalDate> daysToUpdate(Map<LocalDate, String> lakeHash) {
+	private Set<LocalDate> daysToUpdate(Map<LocalDate, String> lakeHash) {
 		Map<LocalDate, String> datamartHash;
 		try {
 			datamartHash = datamart.dateHashes();
@@ -63,10 +70,8 @@ public class Controller {
 		Set<LocalDate> lakeDates = lakeHash.keySet();
 		Set<LocalDate> datamartDates = datamartHash.keySet();
 
-		Set<LocalDate> newDates = new HashSet<>(lakeDates);
-		newDates.removeAll(datamartDates);
-
-		List<LocalDate> updateDates = new ArrayList<>(newDates);
+		Set<LocalDate> updateDates = new HashSet<>(lakeDates);
+		updateDates.removeAll(datamartDates);
 
 		datamartHash.forEach((date, hash) -> {
 			if (lakeHash.containsKey(date) && (!lakeHash.get(date).equals(hash))) {
