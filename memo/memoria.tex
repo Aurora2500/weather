@@ -1,0 +1,196 @@
+\documentclass{article}
+\usepackage[spanish]{babel}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\usepackage[
+	backend=biber,
+	style=numeric,
+]{biblatex}
+
+\usepackage{enumitem}
+\usepackage{extarrows}
+\usepackage{mathtools}
+\usepackage{systeme}
+\usepackage{graphicx}
+\usepackage{float}
+
+\usepackage{multirow}
+\usepackage{minted}
+
+\graphicspath{ {./img/} }
+
+\addbibresource{./sources.bib}
+
+\newcommand{\cimg}[2]{
+\begin{figure}[H]
+	\center
+		\includegraphics[width=#2\linewidth]{#1}
+\end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+	{\huge\bfseries Weather datalake -- Memoria\par}
+	\vspace{3cm}
+	{\scshape\large Desarollo de Applicaciones para Ciencia de Datos\par}
+	\vspace{1cm}
+	{\scshape\large Grado en Ciencias e Ingeniería de Datos\par}
+	\vspace{1cm}
+	{\scshape\large Escuela de Ingeniería Informática\par}
+	\vspace{1cm}
+	{\scshape\large Universidad de Las Palmas de Gran Canaria\par}
+\end{titlepage}
+
+\newpage
+
+\begin{abstract}
+
+El proyecto de Weather Datalake consiste de tres programas escritos en Java:
+
+\begin{itemize}
+	\item \textbf{Weather feeder}: Se descarga datos meteorológicos de una API y los guarda en un datalake.
+	\item \textbf{Weather datamart}: Lee los datos del datalake y crea o actualiza un datamart para obtener el tiempo y lugar de extremos en la temperatura.
+	\item \textbf{Weather service}: Un servidor HTTP que provee un API REST para obtener el tiempo y lugar de extremos de temperatura.
+\end{itemize}
+
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Recursos utilizados}
+
+Los siguientes recursos se utilizaron para la realización del proyecto:
+
+\begin{itemize}
+	\item El IDE usado es \textbf{IntelliJ IDEA}
+	\item Para la versión de control se utilizó \textbf{git} con \textbf{GitHub}
+	\item Para la escritura de la memoria, se utilizó \LaTeX{}
+	\item Para los diagramas de clase se utilizó \textbf{StarUML}
+\end{itemize}
+
+
+\section{Diseño}
+
+\subsection{Weather feeder}
+
+\subsubsection{Como usar}
+
+El programa necesita que se le pasen dos variables del entorno para funcionar:
+\begin{itemize}
+	\item \textbf{\texttt{API\char`_KEY}:} ya que actualmente el programa usa Aemet como fuente de datos meteorológicos, necesita esta clave para acceder a Aemet.
+	\item \textbf{\texttt{DATALAKE\char`_PATH}:} Un camino a una carpeta que será el datalake.
+\end{itemize}
+
+\subsubsection{Funcionamiento}
+
+El API de Aemet provee de datos meteorológicos colleccionados en las últimas 24 horas de estaciones de toda España.
+Por esto, la parte de actualización del datalake que coge los datos de la API funciona se ejecuta cada hora.
+Algo notable que nó esta documentado por Aemet es que no todas las estaciones son actualizadas cada hora.
+Hay algunas estaciones que solo actualizan sus datos cada dos horas, y otras estaciones que tardan hasta el próximo día para actualizarse.
+Por lo que no basta con tener un contador de la última hora actualizada, filtrando todos los eventos antes de esta para guardarlos al datalake,
+dado que algunos eventos que han tardado varias horas despues de su grabación serían erroneamente filtrados y no guardados.
+Esto se puede observar, por ejemplo, con que el feeder guarda 23 nuevas observaciones, y 27 en la siguiente hora, alternando entre estos.
+Para solucionar esto, el feeder usa un Set del producto cartesiano del tiempo y estación de cada evento, guardando todos los eventos que no aparezcan en este set.
+Al inicializar el programa, se leen los eventos del datalake para construir el set con los eventos de las últimas 24 horas.
+Y al obtener nuevos eventos del datalake, se van borrando los elementos del set que ocurrieron hace más de 24 horas, para no llenar la memoria.
+
+\subsubsection{Diagrama de clases}
+
+\cimg{feeder}{1}
+
+\subsection{Weather datamart}
+
+
+\subsubsection{Como usar}
+
+El Weather datamart necesita un camino al datalake y otro al datamart para su funcionamiento.
+El camino al datalake se especifica usando la variable de entorno \textbf{\texttt{DATALAKE\char`_PATH}}.
+Y el camino al datamart se especifica como argumento del programa.
+
+\subsubsection{Funcionamiento}
+
+El programa encargado con el datamart transofma el contenido del datalake a una base de datos que indica la temperatura máxima y mínima de un dia.
+Para la implementación de esta, una decisión es sobre como se debe actualizar el datamart. Si se reconstruye desde cero, o si se intenta actualizar.
+Dado que el datamart tendrá que ser actualizado cada hora, la estrategia de construirlo desde cero no es muy bueno cuando el datalake crezca a tener cientos de días,
+dado que cada hora tendría que estar procesando los datos meteorológicos de cada estación en Gran Canaria de cada hora de los últimos varios meses.
+En cuanto a la estrategia de actualizar el datamart, sube la cuestión sobre como se sabe cuales días hay que actualizar.
+Una estrategia ingenua sería actualizar solo los cambios de hoy. Pero hay que acordarse que se posible que Aemet no presente algunos eventos de varias estaciones hasta el siguiente día,
+por lo que esta estrategia se estaría olvidando de nuevos eventos que ocurrieron el día pasado.
+La técnica utilizada para la implementación hace uso del hecho de que cada día en el datalake corresponde a un archivo, y cada día en el datamart corresponde a una tupla.
+De forma de que se sabe si han ocurrido cambios con el uso de hashes, específicamente el de MD5.
+En el datamart, las tablas que contienen las máximas y mínimas temperaturas además contienen un atributo que corresponde al hash del archivo que tuvo cuando se computó los extremos del día.
+De forma de que si hay nuevos eventos en un día, este archivo tendría un hash diferente de forma de que el programa sabrá de que hay que actualizar este dia en el datamart.
+
+\subsubsection{Diagrama de clases}
+
+\cimg{datamart}{1}
+
+\subsection{Weather service}
+
+\subsubsection{Como usar}
+
+El Weather service únicamente necesita el path al datamart. Este se proporciona como un argumento al programa cuando se ejecuta.
+Debe ser notable que si no hay un archivo sqlite en el momento de arranque, el programa se para.
+
+\subsubsection{Funcionamiento}
+
+En el servicio REST, se intenta segregar los detalles de la implementación del servidor REST con lo que es la lógica de negocio del proyecto.
+Existe el módulo application, que pretende set una abstracción de una application, independiente de que típo de lógica de negocio o de como se presentaría al usuario.
+Esta consiste de una applicación con un conjunto de servicios. De forma que además cada servicio tiene una clase asociada para obtener varios parametros de la petición.
+Esta clase se encarga de no solo obtener los parametros de la petición, sino que además de validarlos. De forma que el servicio puede preocuparse solo de la lógica del negocio,
+sino que también tendrá los datos que necesita ya comprobados y con el tipaje adecuado. Cada servicio tiene que tener en ella su propia 
+
+\subsubsection{Diagrama de clases}
+
+\cimg{service}{1}
+
+\newpage
+
+\subsection{Datalake}
+
+Además de los tres programas del proyecto, también hay un paquete para el manejo del datalake.
+
+Este 
+
+\subsubsection{Diagrama de clases}
+
+\cimg{datalake}{1}
+
+\section{Conclusiones}
+
+Un aspecto en el carece el programa es en la falta de herramientas adecuadas en cuanto al logging.
+Actualmente solo se utiliza \mintinline{java}{system.out.println} y \mintinline{java}{system.err.println}.
+Pero sería mejor utilizar librerías como \textbf{\texttt{SLF4J}} y \textbf{\texttt{LOG4J}}.
+La razón por la que no se pudo añadir estos a los programas es por una falta de tiempo.
+
+Otro aspecto en el que se podría mejorar el proyecto es expandiendo el área del cual se capturan los datos, pero además proporcionando más control al usuario
+mediante una mayor variedad de criterios con los que puede selecionar o filtrar los resultados que quiere al realizar la petición al API Rest.
+
+
+\section{Líneas futuras}
+
+Actualmente, el proyecto puede tener varios beneficios en cuanto a temas científicos o agriculturales,
+sabiendo cuando y donde Canarias tuvo ciertas temperaturas bajas o altas puede ser útil para encontrar explicaciones a varios fenómenos como puede ser el de las cosechas de varias fincas.
+Pero si el proyecto se expande a que además tenga capabilidades de predicción. La habilidad de predecir que partes de la isla tendrán ciertas temperaturas dado unos días puede ser interesante
+a la industria turística, dado que podría indicarle a turistas a qué partes de la isla pueden ir para sentir los climas más caloríficos o fríos que provee Gran Canaria.
+
+\printbibliography
+
+\begin{titlepage}
+	\centering
+	{\large\itshape Aurora Zuoris}
+	\vfill
+	La memoria se ha creado el \today{} con \LaTeX{}
+	\vfill
+	\today
+\end{titlepage}
+
+\end{document}
