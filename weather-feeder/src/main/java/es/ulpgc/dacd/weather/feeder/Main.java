@@ -21,10 +21,14 @@ public class Main {
 		}
 
 		File datalakePath = new File(datalakePathString);
+		if(!datalakePath.isDirectory()) {
+			System.err.println("DATALAKE_PATH is not a directory: " + datalakePathString);
+			System.exit(1);
+		}
 
 		Area granCanariaArea = new Area(GC_top, GC_BOTTOM, GC_LEFT, GC_RIGHT);
 
 		Controller controller = new Controller(apiKey, datalakePath, granCanariaArea);
-		controller.startLoop();
+		controller.run();
 	}
 }

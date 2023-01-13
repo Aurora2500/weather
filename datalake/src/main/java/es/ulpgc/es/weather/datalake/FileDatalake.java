@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class FileDatalake implements Datalake {
 	private final File datalakePath;
-	FileHasher fileHasher;
+	private final FileHasher fileHasher;
 
 	public FileDatalake(File datalakePath) {
 		this.datalakePath = datalakePath;

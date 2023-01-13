@@ -41,23 +41,26 @@ public class Controller {
 				.forEach(writtenData::add);
 	}
 
-	public void startLoop() {
+	private void updateDatalake() {
+		writtenData.removeIf(key -> key.time().isBefore(LocalDateTime.now().minusHours(HOURS)));
+		try {
+
+			List<WeatherData> data = (fetchArea.isPresent()? fetcher.fetch(fetchArea.get()) : fetcher.fetch())
+				.filter(dataPoint -> !writtenData.contains(new PlaceTimeKey(dataPoint)))
+				.peek(datapoint -> writtenData.add(new PlaceTimeKey(datapoint)))
+				.toList();
+			datalake.save(data);
+			System.out.println("Saved " + data.size() + " new data points");
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void run() {
 		new Timer().scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				writtenData.removeIf(key -> key.time().isBefore(LocalDateTime.now().minusHours(HOURS)));
-
-				try {
-
-					List<WeatherData> data = (fetchArea.isPresent()? fetcher.fetch(fetchArea.get()) : fetcher.fetch())
-						.filter(dataPoint -> !writtenData.contains(new PlaceTimeKey(dataPoint)))
-						.peek(datapoint -> writtenData.add(new PlaceTimeKey(datapoint)))
-						.toList();
-					datalake.save(data);
-					System.out.println("Saved " + data.size() + " new data points");
-				} catch (IOException | InterruptedException e) {
-					throw new RuntimeException(e);
-				}
+				updateDatalake();
 			}
 		}, 0, MILLIS_IN_HOUR);
 	}

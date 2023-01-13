@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class FileHasher {
-	MessageDigest digest;
+	private final MessageDigest digest;
 
 	public FileHasher() {
 		try {
@@ -46,10 +46,5 @@ public class FileHasher {
 			result.append(String.format("%02x", b));
 		}
 		return result.toString();
-	}
-
-	public static void main(String[] args) throws FileNotFoundException {
-		FileHasher hasher = new FileHasher();
-		System.out.println(hasher.hash(new File("/home/aurora/tmp/datalake/20230109.events")));
 	}
 }
