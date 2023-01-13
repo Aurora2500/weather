@@ -10,7 +10,15 @@ public class Main {
 
 	public static void main(String[] args) {
 		String datalakePathString = System.getenv("DATALAKE_PATH");
+		if(datalakePathString == null) {
+			System.err.println("DATALAKE_PATH environment variable not set");
+			System.exit(1);
+		}
 		String apiKey = System.getenv("API_KEY");
+		if(apiKey == null) {
+			System.err.println("API_KEY environment variable not set");
+			System.exit(1);
+		}
 
 		File datalakePath = new File(datalakePathString);
 
