@@ -4,7 +4,9 @@ import es.ulpgc.es.weather.service.application.*;
 import spark.Spark;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class RestServer {
 	Application application;
@@ -21,13 +23,15 @@ public class RestServer {
 			Spark.get(path, (request, response) -> {
 				ServiceUnit serviceUnit = service.createServiceUnit();
 				RequestParameter requestParameter = serviceUnit.requestParameter();
-				Optional<Response> validationResult = requestParameter.validate(request.params());
+				Map<String, String> parameters = request.queryMap().toMap().entrySet().stream()
+						.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()[0]));
+				Optional<Response> validationResult = requestParameter.validate(parameters);
 				if (validationResult.isPresent()) {
 					fillResponse(validationResult.get(), response);
-					return null;
+					return response.body();
 				}
 				fillResponse(serviceUnit.execute(), response);
-				return null;
+				return response.body();
 			});
 		}
 	}
@@ -36,6 +40,7 @@ public class RestServer {
 		switch (modelResponse.status()) {
 			case Ok -> response.status(200);
 			case InvalidRequest -> response.status(400);
+			case InternalError -> response.status(500);
 		}
 		response.type(modelResponse.response().contentType());
 		response.body(modelResponse.response().toString());
