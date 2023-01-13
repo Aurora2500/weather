@@ -21,7 +21,7 @@ public class Main {
 		}
 
 		File datalakePath = new File(datalakePathString);
-		if(!datalakePath.isDirectory()) {
+		if((!datalakePath.isDirectory()) && (datalakePath.exists())) {
 			System.err.println("DATALAKE_PATH is not a directory: " + datalakePathString);
 			System.exit(1);
 		}
